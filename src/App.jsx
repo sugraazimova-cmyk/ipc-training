@@ -14,7 +14,7 @@ export default function App() {
   const [userStatus, setUserStatus]               = useState(null);
   const [loading, setLoading]                     = useState(true);
   const [requiresPasswordReset, setRequiresPasswordReset] = useState(false);
-  const navigate                                  = useNavigate();
+  const navigate = useNavigate();
 
   const isAdmin = session?.user?.email === import.meta.env.VITE_ADMIN_EMAIL;
 
@@ -34,20 +34,6 @@ export default function App() {
 
     return () => subscription?.unsubscribe();
   }, []);
-
-  // Navigate once we know auth state
-  useEffect(() => {
-    if (loading) return;
-    const path = window.location.pathname;
-    const publicPaths = ['/login', '/signup', '/update-password'];
-    if (publicPaths.includes(path)) return; // let routes handle public pages
-
-    if (!session) { navigate('/login', { replace: true }); return; }
-    if (requiresPasswordReset) { navigate('/update-password', { replace: true }); return; }
-    if (isAdmin && path === '/') { navigate('/admin', { replace: true }); return; }
-    if (!isAdmin && userStatus === 'approved' && path === '/') { navigate('/dashboard', { replace: true }); return; }
-    if (!isAdmin && userStatus !== 'approved' && path === '/') { navigate('/pending', { replace: true }); return; }
-  }, [session, userStatus, loading, isAdmin, requiresPasswordReset]);
 
   const fetchUserStatus = async (userId) => {
     try {
