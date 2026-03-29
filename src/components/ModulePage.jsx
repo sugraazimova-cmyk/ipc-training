@@ -121,20 +121,27 @@ export default function ModulePage({ user }) {
             const isLocked =
               (s.key === 'content'  && !prePassed) ||
               (s.key === 'posttest' && !allContentDone);
+            const isClickable = !isLocked;
 
             return (
               <div key={s.key} className="flex items-center gap-2">
-                <div className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                  s.done
-                    ? 'bg-green-100 text-green-700'
-                    : isActive
-                    ? 'bg-[#069494] text-white'
-                    : 'bg-gray-100 text-gray-400'
-                }`}>
-                  {s.done   ? <CheckCircle2 size={12} /> : null}
+                <button
+                  disabled={!isClickable}
+                  onClick={() => isClickable && setStep(s.key)}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                    s.done
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer'
+                      : isActive
+                      ? 'bg-[#069494] text-white'
+                      : isLocked
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200 cursor-pointer'
+                  }`}
+                >
+                  {s.done        ? <CheckCircle2 size={12} /> : null}
                   {!s.done && isLocked ? <Lock size={12} /> : null}
                   {s.label}
-                </div>
+                </button>
                 {i < steps.length - 1 && (
                   <ChevronRight size={14} className="text-gray-300" />
                 )}
