@@ -25,11 +25,25 @@ function YouTubePlayer({ videoId, contentId, userId, isWatched, onWatched }) {
   const divRef = useRef(null);
   const playerRef = useRef(null);
   const watchedRef = useRef(isWatched);
+  const maxReachedRef = useRef(0);
 
   useEffect(() => { watchedRef.current = isWatched; }, [isWatched]);
 
   useEffect(() => {
     let interval = null;
+
+    const enforceNoSkip = () => {
+      if (watchedRef.current || !playerRef.current) return;
+      try {
+        const current = playerRef.current.getCurrentTime();
+        // Allow up to 10s ahead of max reached (buffer for seek imprecision)
+        if (current > maxReachedRef.current + 10) {
+          playerRef.current.seekTo(maxReachedRef.current, true);
+        } else {
+          maxReachedRef.current = Math.max(maxReachedRef.current, current);
+        }
+      } catch {}
+    };
 
     const init = () => {
       if (!divRef.current) return;
@@ -43,14 +57,16 @@ function YouTubePlayer({ videoId, contentId, userId, isWatched, onWatched }) {
               markWatched();
               return;
             }
-            // State 1 = playing → poll every 5s
+            // State 1 = playing → check for skip, then poll every 5s
             if (e.data === 1) {
+              enforceNoSkip();
               interval = setInterval(() => {
                 if (!playerRef.current || watchedRef.current) {
                   clearInterval(interval);
                   return;
                 }
                 try {
+                  enforceNoSkip();
                   const pct = playerRef.current.getCurrentTime() / playerRef.current.getDuration();
                   if (pct >= 0.9) { markWatched(); clearInterval(interval); }
                 } catch {}
@@ -94,6 +110,9 @@ function YouTubePlayer({ videoId, contentId, userId, isWatched, onWatched }) {
 }
 
 function StorageVideo({ src, contentId, userId, isWatched, onWatched }) {
+  const videoRef = useRef(null);
+  const maxWatchedRef = useRef(0);
+
   const markWatched = async () => {
     if (isWatched) return;
     await supabase.from('content_progress').upsert(
@@ -106,12 +125,20 @@ function StorageVideo({ src, contentId, userId, isWatched, onWatched }) {
   return (
     <div className="relative">
       <video
+        ref={videoRef}
         controls
         className="w-full aspect-video rounded-2xl bg-black"
         onTimeUpdate={(e) => {
           if (isWatched) return;
           const { currentTime, duration } = e.target;
+          maxWatchedRef.current = Math.max(maxWatchedRef.current, currentTime);
           if (duration > 0 && currentTime / duration >= 0.9) markWatched();
+        }}
+        onSeeking={(e) => {
+          if (isWatched) return;
+          if (e.target.currentTime > maxWatchedRef.current + 2) {
+            e.target.currentTime = maxWatchedRef.current;
+          }
         }}
       >
         <source src={src} />
