@@ -5,12 +5,14 @@ import LoginForm from './components/LoginForm';
 import SignupForm from './components/SignupForm';
 import Dashboard from './components/Dashboard';
 import PendingApproval from './components/PendingApproval';
+import UpdatePassword from './components/UpdatePassword';
 
 export default function App() {
   const [session, setSession] = useState(null);
   const [userStatus, setUserStatus] = useState(null); // 'pending' | 'approved' | null
   const [loading, setLoading] = useState(true);
   const [showSignup, setShowSignup] = useState(false);
+  const [requiresPasswordReset, setRequiresPasswordReset] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -23,7 +25,11 @@ export default function App() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          setRequiresPasswordReset(true);
+        }
+        
         setSession(session);
         if (session) {
           fetchUserStatus(session.user.id);
@@ -73,6 +79,10 @@ export default function App() {
         }
       </PhotoBackground>
     );
+  }
+
+  if (requiresPasswordReset) {
+    return <UpdatePassword onPasswordUpdated={() => setRequiresPasswordReset(false)} />;
   }
 
   const isAdmin = session.user.email === import.meta.env.VITE_ADMIN_EMAIL;
