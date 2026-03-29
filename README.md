@@ -155,8 +155,19 @@ GitHub → Vercel (auto-deploy on push to main)
 | `id` | BIGINT PK | |
 | `title` | TEXT | Module name |
 | `description` | TEXT | |
-| `completed` | BOOLEAN | Per-user completion (placeholder) |
 | `created_at` | TIMESTAMPTZ | |
+
+### `user_progress` table
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `user_id` | UUID FK | References `users.id` |
+| `module_id` | BIGINT FK | References `modules.id` |
+| `status` | TEXT | `not_started` \| `in_progress` \| `completed` |
+| `last_accessed` | TIMESTAMPTZ | |
+| PRIMARY KEY | `(user_id, module_id)` | One row per user-module pair |
+
+> `user_progress` is not yet created in Supabase — needed before implementing module completion tracking.
 
 ### RLS Policies (users table)
 
@@ -250,3 +261,4 @@ Set these in Vercel → Project Settings → Environment Variables:
 ---
 
 **Last Updated:** March 2026
+
