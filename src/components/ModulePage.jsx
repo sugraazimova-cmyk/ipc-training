@@ -161,6 +161,7 @@ export default function ModulePage({ user }) {
           <ContentView
             contents={contents}
             userId={user.id}
+            moduleId={moduleId}
             onAllComplete={handleAllContentComplete}
           />
         )}

@@ -21,11 +21,12 @@ function loadYTApi(cb) {
   }
 }
 
-function YouTubePlayer({ videoId, contentId, userId, isWatched, onWatched }) {
+function YouTubePlayer({ videoId, contentId, userId, moduleId, isWatched, onWatched }) {
   const divRef = useRef(null);
   const playerRef = useRef(null);
   const watchedRef = useRef(isWatched);
   const maxReachedRef = useRef(0);
+  const accessUpdatedRef = useRef(false);
 
   useEffect(() => { watchedRef.current = isWatched; }, [isWatched]);
 
@@ -67,6 +68,14 @@ function YouTubePlayer({ videoId, contentId, userId, isWatched, onWatched }) {
                 }
                 try {
                   enforceNoSkip();
+                  // After 10s of real playback, mark meaningful content access
+                  if (!accessUpdatedRef.current && maxReachedRef.current >= 10) {
+                    accessUpdatedRef.current = true;
+                    supabase.from('user_progress').upsert(
+                      { user_id: userId, module_id: parseInt(moduleId), last_content_access_at: new Date().toISOString() },
+                      { onConflict: 'user_id,module_id' }
+                    );
+                  }
                   const pct = playerRef.current.getCurrentTime() / playerRef.current.getDuration();
                   if (pct >= 0.9) { markWatched(); clearInterval(interval); }
                 } catch {}
@@ -109,9 +118,10 @@ function YouTubePlayer({ videoId, contentId, userId, isWatched, onWatched }) {
   );
 }
 
-function StorageVideo({ src, contentId, userId, isWatched, onWatched }) {
+function StorageVideo({ src, contentId, userId, moduleId, isWatched, onWatched }) {
   const videoRef = useRef(null);
   const maxWatchedRef = useRef(0);
+  const accessUpdatedRef = useRef(false);
 
   const markWatched = async () => {
     if (isWatched) return;
@@ -132,6 +142,14 @@ function StorageVideo({ src, contentId, userId, isWatched, onWatched }) {
           if (isWatched) return;
           const { currentTime, duration } = e.target;
           maxWatchedRef.current = Math.max(maxWatchedRef.current, currentTime);
+          // After 10s of real playback, mark meaningful content access
+          if (!accessUpdatedRef.current && maxWatchedRef.current >= 10) {
+            accessUpdatedRef.current = true;
+            supabase.from('user_progress').upsert(
+              { user_id: userId, module_id: parseInt(moduleId), last_content_access_at: new Date().toISOString() },
+              { onConflict: 'user_id,module_id' }
+            );
+          }
           if (duration > 0 && currentTime / duration >= 0.9) markWatched();
         }}
         onSeeking={(e) => {
@@ -154,7 +172,7 @@ function StorageVideo({ src, contentId, userId, isWatched, onWatched }) {
 
 const CONTENT_ICON = { video: PlayCircle, pdf: FileText };
 
-export default function ContentView({ contents, userId, onAllComplete }) {
+export default function ContentView({ contents, userId, moduleId, onAllComplete }) {
   const [progress, setProgress] = useState({});
   const [loading, setLoading] = useState(true);
   const [panelOpen, setPanelOpen] = useState(true);
@@ -187,10 +205,17 @@ export default function ContentView({ contents, userId, onAllComplete }) {
   };
 
   const markRead = async (contentId) => {
-    await supabase.from('content_progress').upsert(
-      { user_id: userId, content_id: contentId, completed: true, completed_at: new Date().toISOString() },
-      { onConflict: 'user_id,content_id' }
-    );
+    const now = new Date().toISOString();
+    await Promise.all([
+      supabase.from('content_progress').upsert(
+        { user_id: userId, content_id: contentId, completed: true, completed_at: now },
+        { onConflict: 'user_id,content_id' }
+      ),
+      supabase.from('user_progress').upsert(
+        { user_id: userId, module_id: parseInt(moduleId), last_content_access_at: now },
+        { onConflict: 'user_id,module_id' }
+      ),
+    ]);
     handleDone(contentId);
   };
 
@@ -290,6 +315,7 @@ export default function ContentView({ contents, userId, onAllComplete }) {
                     src={item.body}
                     contentId={item.id}
                     userId={userId}
+                    moduleId={moduleId}
                     isWatched={done}
                     onWatched={handleDone}
                   />
@@ -298,6 +324,7 @@ export default function ContentView({ contents, userId, onAllComplete }) {
                     videoId={item.body}
                     contentId={item.id}
                     userId={userId}
+                    moduleId={moduleId}
                     isWatched={done}
                     onWatched={handleDone}
                   />

@@ -111,7 +111,14 @@ export default function TestView({ testId, testType, onComplete }) {
           })),
         },
       });
-      if (fnError) throw new Error(fnError.message || 'Xəta baş verdi');
+      if (fnError) {
+        let message = 'Xəta baş verdi';
+        try {
+          const body = await fnError.context.json();
+          if (body?.error) message = body.error;
+        } catch {}
+        throw new Error(message);
+      }
       if (data?.error) throw new Error(data.error);
       setResult(data);
     } catch (err) {
