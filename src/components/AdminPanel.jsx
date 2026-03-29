@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
-export default function AdminPanel({ user, onBack }) {
+export default function AdminPanel({ user }) {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('pending');
@@ -34,6 +36,7 @@ export default function AdminPanel({ user, onBack }) {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    navigate('/login');
   };
 
   const pendingUsers = users.filter(u => u.status === 'pending');
@@ -54,14 +57,12 @@ export default function AdminPanel({ user, onBack }) {
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-white/50">{user.email}</span>
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              ← Dashboarda qayıt
-            </button>
-          )}
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            ← Dashboarda qayıt
+          </button>
           <button
             onClick={handleLogout}
             className="text-sm text-red-400 hover:text-red-300 transition-colors"

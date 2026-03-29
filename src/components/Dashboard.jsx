@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import {
   LayoutDashboard, BookOpen, Calendar, Award, Settings,
   LogOut, Bell, Search, ChevronRight, CheckCircle2, Clock, Star, ShieldCheck
 } from 'lucide-react';
-import AdminPanel from './AdminPanel';
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Əsas Səhifə', key: 'dashboard' },
@@ -32,9 +32,10 @@ function CircularProgress({ percentage, size = 120, strokeWidth = 10 }) {
 }
 
 export default function Dashboard({ user, isAdmin }) {
-  const [profile, setProfile]   = useState(null);
-  const [modules, setModules]   = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const navigate = useNavigate();
+  const [profile, setProfile]     = useState(null);
+  const [modules, setModules]     = useState([]);
+  const [loading, setLoading]     = useState(true);
   const [activeNav, setActiveNav] = useState('dashboard');
 
   useEffect(() => { fetchProfile(); }, []);
@@ -60,7 +61,10 @@ export default function Dashboard({ user, isAdmin }) {
     }
   };
 
-  const handleLogout = async () => { await supabase.auth.signOut(); };
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
 
   const completed = modules.filter(m => m.completed).length;
   const progress  = modules.length > 0 ? Math.round((completed / modules.length) * 100) : 0;
@@ -74,8 +78,6 @@ export default function Dashboard({ user, isAdmin }) {
       <p className="text-gray-400 text-sm">Yüklənir...</p>
     </div>
   );
-
-  if (activeNav === 'admin') return <AdminPanel user={user} onBack={() => setActiveNav('dashboard')} />;
 
   return (
     <div className="min-h-screen flex relative font-sans text-gray-800 overflow-hidden bg-[#e0f2f1]/30">
@@ -118,7 +120,7 @@ export default function Dashboard({ user, isAdmin }) {
             })}
             {isAdmin && (
               <button
-                onClick={() => setActiveNav('admin')}
+                onClick={() => navigate('/admin')}
                 className="flex items-center gap-4 px-5 py-3.5 rounded-full text-sm font-semibold transition-colors text-purple-600 hover:bg-purple-50 border-2 border-transparent hover:border-purple-200 mt-4"
               >
                 <ShieldCheck size={20} className="text-purple-400" />
