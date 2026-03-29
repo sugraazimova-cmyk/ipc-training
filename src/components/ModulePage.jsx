@@ -54,13 +54,25 @@ export default function ModulePage({ user }) {
       setAllContentDone(contentAllDone);
     }
 
-    // Determine step
-    if (!prog || prog.status === 'not_started') {
-      setStep('pretest');
-    } else if (prog.status === 'in_progress') {
-      setStep(contentAllDone ? 'posttest' : 'content');
-    } else if (prog.status === 'completed') {
+    // Check if pre-test was actually attempted (source of truth — status may be stale)
+    const preTestRow = tests.find(t => t.type === 'pre');
+    let preAttempted = false;
+    if (preTestRow) {
+      const { count } = await supabase
+        .from('test_attempts')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('test_id', preTestRow.id);
+      preAttempted = (count ?? 0) > 0;
+    }
+
+    // Determine step — use preAttempted as fallback if status is stale
+    if (prog?.status === 'completed') {
       setStep('done');
+    } else if (prog?.status === 'in_progress' || preAttempted) {
+      setStep(contentAllDone ? 'posttest' : 'content');
+    } else {
+      setStep('pretest');
     }
 
     setLoading(false);
@@ -89,7 +101,7 @@ export default function ModulePage({ user }) {
     </div>
   );
 
-  const prePassed  = progress && progress.status !== 'not_started';
+  const prePassed  = (progress && progress.status !== 'not_started') || step !== 'pretest';
   const postPassed = progress?.status === 'completed';
 
   const steps = [
