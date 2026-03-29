@@ -158,6 +158,7 @@ export default function ContentView({ contents, userId, onAllComplete }) {
   const [progress, setProgress] = useState({});
   const [loading, setLoading] = useState(true);
   const [panelOpen, setPanelOpen] = useState(true);
+  const initiallyAllDoneRef = useRef(false);
 
   useEffect(() => {
     if (!contents.length) { setLoading(false); return; }
@@ -169,9 +170,11 @@ export default function ContentView({ contents, userId, onAllComplete }) {
       .then(({ data }) => {
         const map = {};
         (data || []).forEach(cp => { map[cp.content_id] = cp.completed; });
+        const allDone = contents.every(c => map[c.id]);
+        initiallyAllDoneRef.current = allDone;
         setProgress(map);
         setLoading(false);
-        checkAllDone(map);
+        if (!allDone) checkAllDone(map);
       });
   }, []);
 
