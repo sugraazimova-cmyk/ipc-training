@@ -37,8 +37,6 @@ export default function Dashboard({ user, isAdmin }) {
   const [loading, setLoading]   = useState(true);
   const [activeNav, setActiveNav] = useState('dashboard');
 
-  if (activeNav === 'admin') return <AdminPanel user={user} onBack={() => setActiveNav('dashboard')} />;
-
   useEffect(() => { fetchProfile(); }, []);
 
   const fetchProfile = async () => {
@@ -76,6 +74,8 @@ export default function Dashboard({ user, isAdmin }) {
       <p className="text-gray-400 text-sm">Yüklənir...</p>
     </div>
   );
+
+  if (activeNav === 'admin') return <AdminPanel user={user} onBack={() => setActiveNav('dashboard')} />;
 
   return (
     <div className="min-h-screen bg-[#f0f2f5] flex">
