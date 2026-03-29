@@ -224,6 +224,7 @@ export default function Dashboard({ user, isAdmin }) {
                     {modules.map((mod) => (
                       <div
                         key={mod.id}
+                        onClick={() => navigate(`/module/${mod.id}`)}
                         className="flex items-center justify-between p-5 bg-white border-2 border-[#069494]/10 rounded-[1rem] hover:border-[#069494]/40 hover:shadow-md transition-all cursor-pointer group"
                       >
                         <div className="flex items-center gap-4">

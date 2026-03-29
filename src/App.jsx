@@ -8,6 +8,7 @@ import Dashboard from './components/Dashboard';
 import PendingApproval from './components/PendingApproval';
 import AdminPanel from './components/AdminPanel';
 import UpdatePassword from './components/UpdatePassword';
+import ModulePage from './components/ModulePage';
 
 export default function App() {
   const [session, setSession]                     = useState(null);
@@ -82,6 +83,12 @@ export default function App() {
           : requiresPasswordReset                   ? <Navigate to="/update-password" replace />
           : !isAdmin && userStatus !== 'approved'   ? <Navigate to="/pending" replace />
           : <Dashboard user={session.user} isAdmin={isAdmin} />
+      } />
+      <Route path="/module/:moduleId" element={
+        !session                                  ? <Navigate to="/login" replace />
+          : requiresPasswordReset                 ? <Navigate to="/update-password" replace />
+          : !isAdmin && userStatus !== 'approved' ? <Navigate to="/pending" replace />
+          : <ModulePage user={session.user} />
       } />
       <Route path="/admin" element={
         !session   ? <Navigate to="/login" replace />
