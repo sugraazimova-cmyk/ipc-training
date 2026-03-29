@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   LayoutDashboard, BookOpen, Calendar, Award, Settings,
-  LogOut, Bell, Search, ChevronRight, CheckCircle2, Clock, Star
+  LogOut, Bell, Search, ChevronRight, CheckCircle2, Clock, Star, ShieldCheck
 } from 'lucide-react';
+import AdminPanel from './AdminPanel';
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Əsas Səhifə', key: 'dashboard' },
@@ -30,11 +31,13 @@ function CircularProgress({ percentage, size = 120, strokeWidth = 10 }) {
   );
 }
 
-export default function Dashboard({ user }) {
+export default function Dashboard({ user, isAdmin }) {
   const [profile, setProfile]   = useState(null);
   const [modules, setModules]   = useState([]);
   const [loading, setLoading]   = useState(true);
   const [activeNav, setActiveNav] = useState('dashboard');
+
+  if (activeNav === 'admin') return <AdminPanel user={user} onBack={() => setActiveNav('dashboard')} />;
 
   useEffect(() => { fetchProfile(); }, []);
 
@@ -103,6 +106,15 @@ export default function Dashboard({ user }) {
               {label}
             </button>
           ))}
+          {isAdmin && (
+            <button
+              onClick={() => setActiveNav('admin')}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-purple-500 hover:bg-purple-50 mt-2"
+            >
+              <ShieldCheck size={18} />
+              Admin Panel
+            </button>
+          )}
         </nav>
 
         {/* Logout */}

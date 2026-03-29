@@ -5,7 +5,6 @@ import LoginForm from './components/LoginForm';
 import SignupForm from './components/SignupForm';
 import Dashboard from './components/Dashboard';
 import PendingApproval from './components/PendingApproval';
-import AdminPanel from './components/AdminPanel';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -77,11 +76,10 @@ export default function App() {
   }
 
   const isAdmin = session.user.email === import.meta.env.VITE_ADMIN_EMAIL;
-  if (isAdmin) return <AdminPanel user={session.user} />;
 
-  if (userStatus !== 'approved') {
+  if (userStatus !== 'approved' && !isAdmin) {
     return <PendingApproval user={session.user} userStatus={userStatus} />;
   }
 
-  return <Dashboard user={session.user} />;
+  return <Dashboard user={session.user} isAdmin={isAdmin} />;
 }
