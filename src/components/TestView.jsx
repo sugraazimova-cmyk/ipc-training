@@ -102,26 +102,17 @@ export default function TestView({ testId, testType, onComplete }) {
     setSubmitting(true);
     setError('');
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit-test`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            test_id: testId,
-            answers: Object.entries(answers).map(([qId, choice]) => ({
-              question_id: parseInt(qId),
-              user_choice: choice,
-            })),
-          }),
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Xəta baş verdi');
+      const { data, error: fnError } = await supabase.functions.invoke('submit-test', {
+        body: {
+          test_id: testId,
+          answers: Object.entries(answers).map(([qId, choice]) => ({
+            question_id: parseInt(qId),
+            user_choice: choice,
+          })),
+        },
+      });
+      if (fnError) throw new Error(fnError.message || 'Xəta baş verdi');
+      if (data?.error) throw new Error(data.error);
       setResult(data);
     } catch (err) {
       setError(err.message);
