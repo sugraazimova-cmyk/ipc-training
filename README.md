@@ -145,6 +145,7 @@ GitHub → Vercel (auto-deploy on push to main)
 | `ixtisas` | TEXT | Specialty |
 | `ohdelik` | TEXT | `İPİN həkimi` or `İPİN tibb bacısı` |
 | `vezife` | TEXT | Position/job title |
+| `role` | TEXT | `user` \| `admin` — default `user`, set manually in Supabase |
 | `status` | TEXT | `pending` \| `approved` \| `rejected` |
 | `created_at` | TIMESTAMPTZ | |
 

@@ -12,11 +12,12 @@ import UpdatePassword from './components/UpdatePassword';
 export default function App() {
   const [session, setSession]                     = useState(null);
   const [userStatus, setUserStatus]               = useState(null);
+  const [userRole, setUserRole]                   = useState(null);
   const [loading, setLoading]                     = useState(true);
   const [requiresPasswordReset, setRequiresPasswordReset] = useState(false);
   const navigate = useNavigate();
 
-  const isAdmin = session?.user?.email === import.meta.env.VITE_ADMIN_EMAIL;
+  const isAdmin = userRole === 'admin';
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -29,7 +30,7 @@ export default function App() {
       if (event === 'PASSWORD_RECOVERY') setRequiresPasswordReset(true);
       setSession(session);
       if (session) fetchUserStatus(session.user.id);
-      else { setUserStatus(null); setLoading(false); }
+      else { setUserStatus(null); setUserRole(null); setLoading(false); }
     });
 
     return () => subscription?.unsubscribe();
@@ -38,11 +39,13 @@ export default function App() {
   const fetchUserStatus = async (userId) => {
     try {
       const { data, error } = await supabase
-        .from('users').select('status').eq('id', userId).single();
+        .from('users').select('status, role').eq('id', userId).single();
       if (error) throw error;
       setUserStatus(data.status);
+      setUserRole(data.role ?? 'user');
     } catch {
       setUserStatus('pending');
+      setUserRole('user');
     } finally {
       setLoading(false);
     }
