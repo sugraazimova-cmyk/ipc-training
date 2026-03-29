@@ -31,7 +31,7 @@ const VEZIFELER = [
 ];
 
 const inputClass =
-  'w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-purple-500/60 transition-colors text-sm';
+  'w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#069494]/80 transition-colors text-sm';
 
 const labelClass = 'block text-xs text-white/60 mb-1';
 
@@ -181,7 +181,7 @@ export default function SignupForm({ onSwitch }) {
         <p className="text-white/60 text-sm">
           Hesabınız yaradıldı. Admin təsdiqindən sonra daxil ola bilərsiniz.
         </p>
-        <button onClick={onSwitch} className="text-purple-400 hover:text-purple-300 transition-colors text-sm">
+        <button onClick={onSwitch} className="text-[#0dc9c9] hover:text-[#069494] transition-colors text-sm">
           Daxil ol səhifəsinə qayıt
         </button>
       </GlassCard>
@@ -191,9 +191,9 @@ export default function SignupForm({ onSwitch }) {
   return (
     <GlassCard className="w-full max-w-2xl mx-auto">
       {/* Header */}
-      <div className="mb-6 text-center">
-        <h2 className="text-3xl font-bold text-white mb-1">İPC Təlim Portalı</h2>
-        <p className="text-white/60 text-sm">Yeni hesab yaradın</p>
+      <div className="mb-6 text-center px-2">
+        <div className="text-xl font-bold text-white mb-2 leading-snug">İnfeksiyaların profilaktikası və infeksion nəzarət üzrə təlim portalı</div>
+        <div className="text-white text-sm">Yeni hesab yaradın</div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -292,7 +292,7 @@ export default function SignupForm({ onSwitch }) {
                   value={opt}
                   checked={form.ohdelik === opt}
                   onChange={set('ohdelik')}
-                  className="accent-purple-500"
+                  className="accent-[#069494]"
                 />
                 {opt}
               </label>
@@ -322,7 +322,7 @@ export default function SignupForm({ onSwitch }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white font-medium rounded-lg transition-colors text-sm shadow-lg shadow-purple-500/20"
+          className="w-full py-2.5 bg-[#069494] hover:bg-[#057a7a] disabled:bg-gray-600 text-white font-medium rounded-lg transition-colors text-sm shadow-lg shadow-[#069494]/20"
         >
           {loading ? 'Yüklənir...' : 'Qeydiyyatdan keç'}
         </button>
@@ -330,7 +330,7 @@ export default function SignupForm({ onSwitch }) {
 
       <p className="mt-6 text-center text-sm text-white/50">
         Artıq hesabınız var?{' '}
-        <button onClick={onSwitch} className="text-purple-400 hover:text-purple-300 transition-colors">
+        <button onClick={onSwitch} className="text-[#0dc9c9] hover:text-[#069494] transition-colors">
           Daxil ol
         </button>
       </p>
