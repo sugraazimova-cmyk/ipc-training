@@ -78,11 +78,11 @@ export default function Dashboard({ user, isAdmin }) {
   if (activeNav === 'admin') return <AdminPanel user={user} onBack={() => setActiveNav('dashboard')} />;
 
   return (
-    <div className="min-h-screen flex relative font-sans text-gray-800">
+    <div className="min-h-screen flex relative font-sans text-gray-800 overflow-hidden bg-[#e0f2f1]">
       {/* Background & Glass Overlay */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <img src="/background.png" alt="background" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-white/85 backdrop-blur-md" />
+        <img src="/background.png" alt="background" className="absolute inset-0 w-full h-full object-cover opacity-90" />
+        <div className="absolute inset-0 bg-white/60 backdrop-blur-[8px]" />
       </div>
 
       {/* Main Framework */}
