@@ -78,17 +78,17 @@ export default function Dashboard({ user, isAdmin }) {
   if (activeNav === 'admin') return <AdminPanel user={user} onBack={() => setActiveNav('dashboard')} />;
 
   return (
-    <div className="min-h-screen flex relative font-sans text-gray-800 overflow-hidden bg-[#e0f2f1]">
+    <div className="min-h-screen flex relative font-sans text-gray-800 overflow-hidden bg-transparent">
       {/* Background & Glass Overlay */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <img src="/background.png" alt="background" className="absolute inset-0 w-full h-full object-cover opacity-90" />
-        <div className="absolute inset-0 bg-white/60 backdrop-blur-[8px]" />
+        <img src="/background.png" alt="background" className="absolute inset-0 w-full h-full object-cover opacity-100" />
+        <div className="absolute inset-0 bg-white/20 backdrop-blur-[3px]" />
       </div>
 
       {/* Main Framework */}
       <div className="relative z-10 flex w-full">
         {/* ── Sidebar ─────────────────────────────────── */}
-        <aside className="w-64 min-h-screen bg-white/60 backdrop-blur-xl border-r border-white/40 flex flex-col py-8 px-5 shadow-[4px_0_24px_rgba(0,0,0,0.02)] fixed left-0 top-0 bottom-0 z-20">
+        <aside className="w-64 min-h-screen bg-white/40 backdrop-blur-xl border-r border-white/20 flex flex-col py-8 px-5 shadow-[4px_0_24px_rgba(0,0,0,0.02)] fixed left-0 top-0 bottom-0 z-20">
           {/* Logo */}
           <div className="flex items-center gap-3 px-2 mb-10">
             <div className="w-10 h-10 rounded-xl bg-[#069494] flex items-center justify-center shadow-lg shadow-[#069494]/30">
