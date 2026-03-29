@@ -84,8 +84,9 @@ serve(async (req) => {
     }
     const test = testRes.rows[0];
 
-    // ── 5. Pre-test requirement: any attempt required before post-test ─
+    // ── 5. Post-test gates: pre-test passed + all content completed ───
     if (test.type === "post") {
+      // Gate 1: pre-test must be passed
       const preRes = await db.queryObject<{ id: number }>(
         `SELECT id FROM tests WHERE module_id = $1 AND type = 'pre'`,
         [test.module_id]
@@ -94,14 +95,31 @@ serve(async (req) => {
         const preTestId = preRes.rows[0].id;
         const preAttemptRes = await db.queryObject<{ count: string }>(
           `SELECT COUNT(*) AS count FROM test_attempts
-           WHERE user_id = $1 AND test_id = $2`,
+           WHERE user_id = $1 AND test_id = $2 AND passed = true`,
           [user.id, preTestId]
         );
         if (parseInt(preAttemptRes.rows[0].count) === 0) {
           await db.queryObject("ROLLBACK");
-          console.error("[submit-test] Post-test without pre-test attempt, user:", user.id);
-          return json({ error: "Pre-testi əvvəlcə həll etməlisiniz" }, 403);
+          console.error("[submit-test] Post-test without passing pre-test, user:", user.id);
+          return json({ error: "Pre-testi əvvəlcə keçməlisiniz" }, 403);
         }
+      }
+
+      // Gate 2: all content for this module must be completed
+      const incompleteRes = await db.queryObject<{ count: string }>(
+        `SELECT COUNT(*) AS count
+         FROM content c
+         LEFT JOIN content_progress cp
+           ON cp.content_id = c.id AND cp.user_id = $1
+         WHERE c.module_id = $2
+           AND (cp.completed IS NULL OR cp.completed = false)`,
+        [user.id, test.module_id]
+      );
+      if (parseInt(incompleteRes.rows[0].count) > 0) {
+        await db.queryObject("ROLLBACK");
+        console.error("[submit-test] Post-test with incomplete content, user:", user.id);
+        return json({ error: "Bütün materialları tamamlamalısınız" }, 403);
+      }
       }
     }
 
