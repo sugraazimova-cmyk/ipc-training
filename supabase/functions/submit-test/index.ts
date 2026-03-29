@@ -120,7 +120,6 @@ serve(async (req) => {
         console.error("[submit-test] Post-test with incomplete content, user:", user.id);
         return json({ error: "Bütün materialları tamamlamalısınız" }, 403);
       }
-      }
     }
 
     // ── 6. Advisory lock — serialises concurrent requests per user+test
