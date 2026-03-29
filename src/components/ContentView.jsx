@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { CheckCircle2, Lock } from 'lucide-react';
+import { CheckCircle2, Lock, ChevronDown, ChevronUp, PlayCircle, FileText, AlignLeft } from 'lucide-react';
 
 // Global YouTube API loader — handles multiple players and re-renders safely
 const ytCallbacks = [];
@@ -152,9 +152,12 @@ function StorageVideo({ src, contentId, userId, isWatched, onWatched }) {
   );
 }
 
+const CONTENT_ICON = { video: PlayCircle, pdf: FileText };
+
 export default function ContentView({ contents, userId, onAllComplete }) {
   const [progress, setProgress] = useState({});
   const [loading, setLoading] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(true);
 
   useEffect(() => {
     if (!contents.length) { setLoading(false); return; }
@@ -202,15 +205,57 @@ export default function ContentView({ contents, userId, onAllComplete }) {
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4 space-y-8">
-      {/* Progress bar */}
-      <div className="bg-white rounded-2xl border-2 border-[#069494]/20 p-4 flex items-center justify-between">
-        <p className="text-sm font-semibold text-gray-600">
-          {completedCount} / {contents.length} material tamamlandı
-        </p>
-        {completedCount === contents.length && (
-          <span className="text-sm font-bold text-green-600 flex items-center gap-1">
-            <CheckCircle2 size={16} /> Hamısı tamamlandı
-          </span>
+      {/* Progress Panel */}
+      <div className="bg-white rounded-2xl border-2 border-[#069494]/20 overflow-hidden">
+        {/* Header row */}
+        <button
+          onClick={() => setPanelOpen(o => !o)}
+          className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-sm font-semibold text-gray-700">
+              {completedCount} / {contents.length} material tamamlandı
+            </span>
+            {completedCount === contents.length && (
+              <span className="text-xs font-bold text-green-600 flex items-center gap-1">
+                <CheckCircle2 size={13} /> Hamısı tamamlandı
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+            {/* Mini progress bar */}
+            <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#069494] rounded-full transition-all duration-500"
+                style={{ width: `${contents.length ? Math.round((completedCount / contents.length) * 100) : 0}%` }}
+              />
+            </div>
+            {panelOpen ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+          </div>
+        </button>
+
+        {/* Expandable list */}
+        {panelOpen && (
+          <div className="border-t border-gray-100 divide-y divide-gray-50">
+            {contents.map((item, idx) => {
+              const done = !!progress[item.id];
+              const locked = idx > 0 && !progress[contents[idx - 1].id];
+              const Icon = CONTENT_ICON[item.type] || AlignLeft;
+              return (
+                <div key={item.id} className="flex items-center gap-3 px-5 py-3">
+                  <Icon size={15} className={done ? 'text-green-500' : locked ? 'text-gray-300' : 'text-[#069494]'} />
+                  <span className={`text-sm flex-1 truncate ${done ? 'text-gray-400 line-through' : locked ? 'text-gray-300' : 'text-gray-700 font-medium'}`}>
+                    {item.title}
+                  </span>
+                  {done
+                    ? <CheckCircle2 size={15} className="text-green-500 flex-shrink-0" />
+                    : locked
+                    ? <Lock size={13} className="text-gray-300 flex-shrink-0" />
+                    : null}
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
