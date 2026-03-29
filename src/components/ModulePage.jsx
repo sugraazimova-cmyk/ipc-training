@@ -66,11 +66,9 @@ export default function ModulePage({ user }) {
     setLoading(false);
   };
 
-  const handlePreTestComplete = (result) => {
-    if (result.passed) {
-      setProgress(p => ({ ...(p || {}), status: 'in_progress' }));
-      setStep('content');
-    }
+  const handlePreTestComplete = () => {
+    setProgress(p => ({ ...(p || {}), status: 'in_progress' }));
+    setStep('content');
   };
 
   const handleAllContentComplete = () => {

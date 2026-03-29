@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
 function ResultView({ result, questions, testType, onContinue, onRetry }) {
-  const { score_percent, passed, correct_count, total_questions, feedback, attempts_remaining_today } = result;
+  const { score_percent, passed, correct_count, total_questions, feedback } = result;
 
   return (
     <div className="max-w-2xl mx-auto py-8 px-4">
@@ -17,12 +17,6 @@ function ResultView({ result, questions, testType, onContinue, onRetry }) {
           {passed ? 'Keçdiniz!' : 'Keçmədiniz'}
         </p>
         <p className="text-sm text-gray-500">{correct_count} / {total_questions} düzgün cavab</p>
-        {!passed && attempts_remaining_today > 0 && (
-          <p className="text-sm text-orange-500 mt-2">Bu gün {attempts_remaining_today} cəhd qalır</p>
-        )}
-        {!passed && attempts_remaining_today === 0 && (
-          <p className="text-sm text-red-500 mt-2">Bu gün cəhd limiti dolub. Sabah yenidən cəhd edin.</p>
-        )}
       </div>
 
       <div className="space-y-3 mb-8">
@@ -52,22 +46,28 @@ function ResultView({ result, questions, testType, onContinue, onRetry }) {
       </div>
 
       <div className="flex gap-3">
-        {passed ? (
+        {testType === 'pre' ? (
+          // Pre-test: always allow continuing regardless of pass/fail
           <button
             onClick={onContinue}
             className="flex-1 py-3 bg-[#069494] text-white font-bold rounded-2xl hover:bg-[#057a7a] transition-all shadow-lg shadow-[#069494]/20"
           >
-            {testType === 'pre' ? 'Materiallara keç →' : 'Tamamlandı →'}
+            Materiallara keç →
+          </button>
+        ) : passed ? (
+          <button
+            onClick={onContinue}
+            className="flex-1 py-3 bg-[#069494] text-white font-bold rounded-2xl hover:bg-[#057a7a] transition-all shadow-lg shadow-[#069494]/20"
+          >
+            Tamamlandı →
           </button>
         ) : (
-          attempts_remaining_today > 0 && (
-            <button
-              onClick={onRetry}
-              className="flex-1 py-3 bg-gray-800 text-white font-bold rounded-2xl hover:bg-gray-700 transition-all"
-            >
-              Yenidən cəhd et
-            </button>
-          )
+          <button
+            onClick={onRetry}
+            className="flex-1 py-3 bg-gray-800 text-white font-bold rounded-2xl hover:bg-gray-700 transition-all"
+          >
+            Yenidən cəhd et
+          </button>
         )}
       </div>
     </div>
