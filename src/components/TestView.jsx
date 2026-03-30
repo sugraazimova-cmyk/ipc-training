@@ -74,7 +74,7 @@ function ResultView({ result, questions, testType, onContinue, onRetry }) {
   );
 }
 
-export default function TestView({ testId, testType, onComplete }) {
+export default function TestView({ testId, testType, onComplete, initialResult }) {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
@@ -88,7 +88,22 @@ export default function TestView({ testId, testType, onComplete }) {
       .select('id, text, options, display_order')
       .eq('test_id', testId)
       .order('display_order')
-      .then(({ data }) => { setQuestions(data || []); setLoading(false); });
+      .then(({ data }) => {
+        const qs = data || [];
+        setQuestions(qs);
+        setLoading(false);
+        // If a prior attempt exists, enrich feedback with correct answers and show result
+        if (initialResult && qs.length > 0) {
+          setResult({
+            ...initialResult,
+            feedback: initialResult.feedback.map(fb => {
+              const q = qs.find(q => q.id === fb.question_id);
+              const correctOpt = q?.options?.find(o => o.is_correct);
+              return { ...fb, correct_answer: correctOpt?.text ?? '' };
+            }),
+          });
+        }
+      });
   }, [testId]);
 
   const handleSelect = (questionId, choice) =>

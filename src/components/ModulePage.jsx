@@ -17,6 +17,7 @@ export default function ModulePage({ user }) {
   const [allContentDone, setAllContentDone] = useState(false);
   const [step, setStep]               = useState('pretest');
   const [loading, setLoading]         = useState(true);
+  const [preTestResult, setPreTestResult] = useState(null);
 
   useEffect(() => { fetchAll(); }, [moduleId]);
 
@@ -58,12 +59,31 @@ export default function ModulePage({ user }) {
     const preTestRow = tests.find(t => t.type === 'pre');
     let preAttempted = false;
     if (preTestRow) {
-      const { count } = await supabase
+      const { data: lastAttempt } = await supabase
         .from('test_attempts')
-        .select('*', { count: 'exact', head: true })
+        .select('id, score_percent, passed')
         .eq('user_id', user.id)
-        .eq('test_id', preTestRow.id);
-      preAttempted = (count ?? 0) > 0;
+        .eq('test_id', preTestRow.id)
+        .order('attempted_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      preAttempted = !!lastAttempt;
+
+      if (lastAttempt) {
+        const { data: attemptAnswers } = await supabase
+          .from('answers')
+          .select('question_id, is_correct')
+          .eq('attempt_id', lastAttempt.id);
+
+        setPreTestResult({
+          score_percent: lastAttempt.score_percent,
+          passed: lastAttempt.passed,
+          correct_count: (attemptAnswers || []).filter(a => a.is_correct).length,
+          total_questions: (attemptAnswers || []).length,
+          feedback: (attemptAnswers || []).map(a => ({ question_id: a.question_id, is_correct: a.is_correct })),
+        });
+      }
     }
 
     // Determine step — use preAttempted as fallback if status is stale
@@ -164,7 +184,7 @@ export default function ModulePage({ user }) {
       {/* Content */}
       <div className="max-w-4xl mx-auto">
         {step === 'pretest' && preTest && (
-          <TestView testId={preTest.id} testType="pre" onComplete={handlePreTestComplete} />
+          <TestView testId={preTest.id} testType="pre" onComplete={handlePreTestComplete} initialResult={preTestResult} />
         )}
 
         {step === 'content' && (
