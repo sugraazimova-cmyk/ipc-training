@@ -9,6 +9,7 @@ import PendingApproval from './components/PendingApproval';
 import AdminPanel from './components/AdminPanel';
 import UpdatePassword from './components/UpdatePassword';
 import ModulePage from './components/ModulePage';
+import ModulesPage from './components/admin/ModulesPage';
 
 export default function App() {
   const [session, setSession]                     = useState(null);
@@ -94,6 +95,11 @@ export default function App() {
         !session   ? <Navigate to="/login" replace />
           : !isAdmin ? <Navigate to="/dashboard" replace />
           : <AdminPanel user={session.user} />
+      } />
+      <Route path="/admin/modules" element={
+        !session   ? <Navigate to="/login" replace />
+          : !isAdmin ? <Navigate to="/dashboard" replace />
+          : <ModulesPage />
       } />
       <Route path="/pending" element={
         !session                  ? <Navigate to="/login" replace />
