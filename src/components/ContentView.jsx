@@ -2,6 +2,17 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { CheckCircle2, Lock, ChevronDown, ChevronUp, PlayCircle, FileText, AlignLeft } from 'lucide-react';
 
+function getYouTubeId(body) {
+  if (!body) return null;
+  if (!body.startsWith('http')) return body; // raw YouTube ID
+  try {
+    const url = new URL(body);
+    if (url.hostname.includes('youtube.com')) return url.searchParams.get('v');
+    if (url.hostname === 'youtu.be') return url.pathname.slice(1);
+  } catch {}
+  return null; // not a YouTube URL — treat as storage URL
+}
+
 // Global YouTube API loader — handles multiple players and re-renders safely
 const ytCallbacks = [];
 let ytLoading = false;
@@ -291,6 +302,7 @@ export default function ContentView({ contents, userId, moduleId, onAllComplete 
         const done = !!progress[item.id];
         // Lock each item until previous is done
         const locked = idx > 0 && !progress[contents[idx - 1].id];
+        const youtubeId = item.type === 'video' ? getYouTubeId(item.body) : null;
 
         return (
           <div key={item.id} className={`bg-white rounded-2xl border-2 overflow-hidden transition-all ${
@@ -310,9 +322,9 @@ export default function ContentView({ contents, userId, moduleId, onAllComplete 
 
             {!locked && (
               <div className="p-6">
-                {item.type === 'video' && item.body.startsWith('http') ? (
-                  <StorageVideo
-                    src={item.body}
+                {youtubeId ? (
+                  <YouTubePlayer
+                    videoId={youtubeId}
                     contentId={item.id}
                     userId={userId}
                     moduleId={moduleId}
@@ -320,8 +332,8 @@ export default function ContentView({ contents, userId, moduleId, onAllComplete 
                     onWatched={handleDone}
                   />
                 ) : item.type === 'video' ? (
-                  <YouTubePlayer
-                    videoId={item.body}
+                  <StorageVideo
+                    src={item.body}
                     contentId={item.id}
                     userId={userId}
                     moduleId={moduleId}

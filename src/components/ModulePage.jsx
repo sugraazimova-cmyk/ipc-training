@@ -57,7 +57,6 @@ export default function ModulePage({ user }) {
 
     // Check if pre-test was actually attempted (source of truth — status may be stale)
     const preTestRow = tests.find(t => t.type === 'pre');
-    let preAttempted = false;
     if (preTestRow) {
       const { data: lastAttempt } = await supabase
         .from('test_attempts')
@@ -67,8 +66,6 @@ export default function ModulePage({ user }) {
         .order('attempted_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-
-      preAttempted = !!lastAttempt;
 
       if (lastAttempt) {
         const { data: attemptAnswers } = await supabase
@@ -98,7 +95,8 @@ export default function ModulePage({ user }) {
     setLoading(false);
   };
 
-  const handlePreTestComplete = () => {
+  const handlePreTestComplete = (result) => {
+    if (result) setPreTestResult(result);
     setProgress(p => ({ ...(p || {}), status: 'in_progress' }));
     setStep('content');
   };
