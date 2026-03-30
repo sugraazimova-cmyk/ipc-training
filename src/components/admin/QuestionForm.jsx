@@ -57,9 +57,26 @@ export default function QuestionForm({ item, testId, moduleId, testType, onSaved
           .insert([{ module_id: parseInt(moduleId), type: testType }])
           .select('*')
           .single();
-        if (testErr) throw testErr;
-        resolvedTestId = newTest.id;
-        createdTest = newTest;
+
+        if (testErr) {
+          if (testErr.code === '23505') {
+            // UNIQUE violation — test was already created (race condition), refetch it
+            const { data: existing, error: fetchErr } = await supabase
+              .from('tests')
+              .select('*')
+              .eq('module_id', parseInt(moduleId))
+              .eq('type', testType)
+              .single();
+            if (fetchErr) throw fetchErr;
+            resolvedTestId = existing.id;
+            onTestCreated?.(existing);
+          } else {
+            throw testErr;
+          }
+        } else {
+          resolvedTestId = newTest.id;
+          createdTest = newTest;
+        }
       }
 
       // Get DB-computed display_order
