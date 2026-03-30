@@ -86,13 +86,13 @@ export default function ModulePage({ user }) {
       }
     }
 
-    // Determine step — use preAttempted as fallback if status is stale
+    // Determine step — always land on pretest review if pre was attempted
     if (prog?.status === 'completed') {
       setStep('done');
-    } else if (prog?.status === 'in_progress' || preAttempted) {
-      setStep(contentAllDone ? 'posttest' : 'content');
+    } else if (contentAllDone) {
+      setStep('posttest');
     } else {
-      setStep('pretest');
+      setStep('pretest'); // Shows result review if already attempted, questions if not
     }
 
     setLoading(false);
