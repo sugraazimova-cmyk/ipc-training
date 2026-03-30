@@ -33,7 +33,7 @@ function ResultView({ result, questions, testType, onContinue, onRetry }) {
                 }
                 <div>
                   <p className="text-sm font-semibold text-gray-800">{q?.text}</p>
-                  {!fb.is_correct && fb.correct_answer && (
+                  {fb.correct_answer && (
                     <p className="text-xs text-green-700 mt-1">
                       Düzgün cavab: <strong>{fb.correct_answer}</strong>
                     </p>
