@@ -10,6 +10,7 @@ import AdminPanel from './components/AdminPanel';
 import UpdatePassword from './components/UpdatePassword';
 import ModulePage from './components/ModulePage';
 import ModulesPage from './components/admin/ModulesPage';
+import ModuleEditor from './components/admin/ModuleEditor';
 
 export default function App() {
   const [session, setSession]                     = useState(null);
@@ -100,6 +101,11 @@ export default function App() {
         !session   ? <Navigate to="/login" replace />
           : !isAdmin ? <Navigate to="/dashboard" replace />
           : <ModulesPage />
+      } />
+      <Route path="/admin/modules/:moduleId" element={
+        !session   ? <Navigate to="/login" replace />
+          : !isAdmin ? <Navigate to="/dashboard" replace />
+          : <ModuleEditor />
       } />
       <Route path="/pending" element={
         !session                  ? <Navigate to="/login" replace />

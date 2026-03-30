@@ -17,16 +17,15 @@ export default function ModuleForm({ module, onSaved, onCancel }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
-    const { error } = isEdit
-      ? await supabase.from('modules').update(form).eq('id', module.id)
-      : await supabase.from('modules').insert([form]);
-    if (error) {
-      console.error(error);
-      alert('Xəta baş verdi');
-      setSaving(false);
-      return;
+    if (isEdit) {
+      const { error } = await supabase.from('modules').update(form).eq('id', module.id);
+      if (error) { console.error(error); alert('Xəta baş verdi'); setSaving(false); return; }
+      onSaved(null);
+    } else {
+      const { data, error } = await supabase.from('modules').insert([form]).select('id').single();
+      if (error) { console.error(error); alert('Xəta baş verdi'); setSaving(false); return; }
+      onSaved(data.id);
     }
-    onSaved();
   };
 
   return (

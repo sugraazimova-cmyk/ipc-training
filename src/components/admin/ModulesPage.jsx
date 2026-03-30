@@ -30,7 +30,11 @@ export default function ModulesPage() {
     setModules(prev => prev.filter(m => m.id !== id));
   };
 
-  const handleSaved = () => { setEditing(null); fetchModules(); };
+  const handleSaved = (newId) => {
+    setEditing(null);
+    if (newId) navigate(`/admin/modules/${newId}`);
+    else fetchModules();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -92,7 +96,7 @@ export default function ModulesPage() {
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2 justify-end">
                         <button
-                          onClick={() => setEditing(m)}
+                          onClick={() => navigate(`/admin/modules/${m.id}`)}
                           className="p-2 rounded-lg hover:bg-[#069494]/10 text-[#069494] transition-colors"
                           title="Redaktə et"
                         >
