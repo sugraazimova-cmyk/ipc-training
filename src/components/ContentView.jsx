@@ -219,8 +219,8 @@ export default function ContentView({ contents, userId, moduleId, onAllComplete 
     handleDone(contentId);
   };
 
-  const checkAllDone = (map) => {
-    if (contents.every(c => map[c.id])) onAllComplete();
+  const checkAllDone = () => {
+    // No auto-redirect — user clicks the CTA button intentionally
   };
 
   if (loading) return (
@@ -355,6 +355,19 @@ export default function ContentView({ contents, userId, moduleId, onAllComplete 
           </div>
         );
       })}
+
+      {/* Post-test CTA — shown only when all content completed */}
+      {completedCount === contents.length && contents.length > 0 && (
+        <div className="bg-white rounded-2xl border-2 border-[#069494]/20 p-6 text-center">
+          <p className="text-sm font-semibold text-gray-700 mb-4">Bütün materialları tamamladınız. Post-testə keçməyə hazırsınız.</p>
+          <button
+            onClick={onAllComplete}
+            className="px-8 py-3 bg-[#069494] text-white font-bold rounded-2xl hover:bg-[#057a7a] transition-all shadow-lg shadow-[#069494]/20"
+          >
+            Post-testə keç →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
