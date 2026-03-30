@@ -58,6 +58,12 @@ export default function AdminPanel({ user }) {
         <div className="flex items-center gap-4">
           <span className="text-sm text-white/50">{user.email}</span>
           <button
+            onClick={() => navigate('/admin/modules')}
+            className="text-sm text-[#069494] hover:text-[#057a7a] transition-colors font-medium"
+          >
+            Modullar
+          </button>
+          <button
             onClick={() => navigate('/dashboard')}
             className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
           >
