@@ -1,8 +1,8 @@
 # IPC Training Platform
 
 **Project:** IPC (Infeksiyaların Profilaktikası və İnfeksion Nəzarət) Training & Compliance Platform for Hospitals
-**Status:** Phase 1 Complete — Live on Vercel
-**Tech Stack:** React 19 + Vite, Supabase (Auth + PostgreSQL), Tailwind CSS v4, Vercel
+**Status:** Phase 2 Active — Core Learning Features Live
+**Tech Stack:** React 19 + Vite, Supabase (Auth + PostgreSQL + Edge Functions), Tailwind CSS v4, Vercel
 **Location:** Azerbaijan
 
 ---
@@ -13,10 +13,11 @@
 2. [What's Built](#whats-built)
 3. [Architecture](#architecture)
 4. [Database Schema](#database-schema)
-5. [Auth & User Flow](#auth--user-flow)
-6. [Email Notifications](#email-notifications)
-7. [Deployment](#deployment)
-8. [Roadmap](#roadmap)
+5. [Module & Certification Logic](#module--certification-logic)
+6. [Auth & User Flow](#auth--user-flow)
+7. [Edge Functions](#edge-functions)
+8. [Deployment](#deployment)
+9. [Roadmap](#roadmap)
 
 ---
 
@@ -24,7 +25,7 @@
 
 ### Prerequisites
 - Node.js 18+
-- Supabase project (auth + database)
+- Supabase project (auth + database + edge functions)
 - Vercel account
 
 ### Setup
@@ -48,54 +49,82 @@ npm run build      # Production build
 |----------|-------|---------|
 | `VITE_SUPABASE_URL` | `.env.local` + Vercel | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | `.env.local` + Vercel | Supabase public anon key |
-| `VITE_ADMIN_EMAIL` | `.env.local` + Vercel | Email address that gets admin access |
+| `VITE_ADMIN_EMAIL` | `.env.local` + Vercel | Email address that gets admin role |
+
+### Supabase Edge Function secrets (auto-injected by Supabase)
+| Secret | Purpose |
+|--------|---------|
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key for server-side DB access |
+
+### Deploy Edge Function
+```bash
+npx supabase functions deploy submit-test --no-verify-jwt
+```
 
 ---
 
 ## What's Built
 
 ### ✅ Authentication
-- Signup with full profile fields (see [Database Schema](#database-schema))
+- Signup with full profile fields
 - Login with email + password
-- Forgot password / reset password flow via Supabase email
-- Strong password enforcement (8+ chars, uppercase, lowercase, number, special char)
-- Password strength meter on signup form
+- Forgot password / reset via Supabase email
+- Strong password enforcement + strength meter
 
-### ✅ User Registration Form
+### ✅ User Registration
 Fields collected on signup:
-- Ad (first name), Soyad (surname), Ata adı (father's name)
+- Ad, Soyad, Ata adı
 - E-poçt + password
-- Xəstəxana adı — dropdown list + "my hospital isn't listed" manual entry
-- İxtisas (specialty) — free text with datalist suggestions
-- Öhdəlik — radio: İPİN həkimi / İPİN tibb bacısı
-- Tutduğu vəzifə (position) — free text with datalist suggestions
+- Xəstəxana adı — dropdown + manual entry fallback
+- İxtisas (specialty), Öhdəlik (həkim / tibb bacısı), Vəzifə (position)
 
 ### ✅ Admin Approval Workflow
-- New users land on a **Pending Approval** page after signup
-- Admin reviews registrations in the **Admin Panel**
-- Admin can: **Approve**, **Reject**, or move back to **Pending**
-- Users rejected see a distinct "Rədd edildi" screen
-- Email notification sent to user on approval (see [Email Notifications](#email-notifications))
+- New users land on Pending Approval page after signup
+- Admin reviews in Admin Panel → Approve / Reject / Pending
+- Email notification on approval (Supabase trigger + Resend API)
 
 ### ✅ Admin Panel (`/admin`)
-- Stats cards: pending / approved / rejected counts
-- Tabs to filter by status
-- Full user details table: name, email, hospital, specialty, role, position, registration date
-- Approve / Reject / Pending buttons per user
-- Back to Dashboard button
+- Stats: pending / approved / rejected counts
+- Filterable user table with full profile details
+- Per-user status controls
 
 ### ✅ Student Dashboard (`/dashboard`)
-- Fixed sidebar: navigation, Admin Panel link (admin only), logout
-- Welcome banner with user's first name
-- Stats: active modules, completed modules, total score
-- Training modules list (from `modules` table)
-- Right panel: profile card, circular progress ring, info card
-- Background image from `/public/background.png`
+- Module list with progress indicators
+- Stats: active, completed, certificates
+- Profile card, circular progress ring
 
-### ✅ Navigation
-- React Router v6 — all pages are real URLs (`/login`, `/signup`, `/dashboard`, `/admin`, `/pending`, `/update-password`)
-- Browser back/forward buttons work correctly throughout
-- Route guards redirect based on session + approval status
+### ✅ Module Learning Flow (`/module/:moduleId`)
+Three-step progression: **Pre-test → Materiallar → Post-test**
+
+Step indicator with locked / active / done states. Each step gated server-side.
+
+#### Pre-test
+- One attempt per certification cycle (1 year)
+- Passing NOT required — completing it unlocks content
+- Cannot retake until certificate expires
+
+#### Content (Materiallar)
+- Sequential content items: video, PDF, HTML
+- Always accessible after pre-test (before/after tests, after cert)
+- YouTube: skip-forward prevention via IFrame API + `maxReachedRef` polling
+- Storage video: skip-forward prevention via `onSeeking` + `maxWatchedRef`
+- Progress tracked per item in `content_progress`
+- `last_content_access_at` updated after 10+ seconds of real engagement
+
+#### Post-test
+- Requires: pre-test attempted + 100% content completed
+- After failure: must review content before retry
+- After pass: 3-day cooldown before next attempt
+- Correct answers shown only on pass
+
+### ✅ Certificates
+- Auto-issued on post-test pass
+- 1-year validity
+- After expiry → new cycle → pre-test required again
+
+### ✅ Edge Function: `submit-test`
+Server-side test scoring, gate enforcement, and certificate issuance. See [Edge Functions](#edge-functions).
 
 ---
 
@@ -104,162 +133,185 @@ Fields collected on signup:
 ```
 Browser → React SPA (Vite)
               │
-              ├─ Supabase Auth   (login, signup, password reset)
-              ├─ Supabase DB     (users, modules tables — direct from client via RLS)
-              └─ Supabase pg_net (HTTP trigger → Resend API for email on approval)
+              ├─ Supabase Auth      (login, signup, password reset)
+              ├─ Supabase DB        (direct client queries via RLS)
+              └─ Supabase Functions (submit-test — scoring + gates + certs)
 
 GitHub → Vercel (auto-deploy on push to main)
 ```
 
-**No separate backend API.** All data access goes directly from the React app to Supabase using the anon key, protected by Row Level Security policies.
+All read queries go directly from the React client to Supabase via RLS. All write operations requiring server-side validation go through the Edge Function.
 
 ### Key Files
 
 | File | Purpose |
 |------|---------|
-| `src/App.jsx` | Route definitions + auth state + session management |
-| `src/lib/supabase.js` | Supabase client (singleton) |
-| `src/components/LoginForm.jsx` | Login + forgot password |
-| `src/components/SignupForm.jsx` | Registration with all profile fields |
-| `src/components/Dashboard.jsx` | Student dashboard with sidebar |
+| `src/App.jsx` | Routes + auth state + session management |
+| `src/lib/supabase.js` | Supabase client singleton |
+| `src/components/ModulePage.jsx` | Module flow orchestration (pre-test → content → post-test) |
+| `src/components/ContentView.jsx` | Content list + YouTube/storage video players + progress tracking |
+| `src/components/TestView.jsx` | Quiz UI + result view + submit via Edge Function |
+| `src/components/Dashboard.jsx` | Student dashboard |
 | `src/components/AdminPanel.jsx` | Admin user management |
-| `src/components/PendingApproval.jsx` | Pending / rejected status page |
-| `src/components/UpdatePassword.jsx` | Password reset after email link |
-| `src/components/ui/gaming-login.jsx` | `PhotoBackground` + `GlassCard` shared UI |
+| `supabase/functions/submit-test/index.ts` | Test scoring + gate enforcement + certificate issuance |
+| `supabase/migrations/001_initial_schema.sql` | Base schema |
+| `supabase/migrations/002_schema_updates.sql` | content_progress, user_notes, last_content_access_at |
 
 ---
 
 ## Database Schema
 
-### `users` table
+| Table | Purpose |
+|-------|---------|
+| `users` | User profiles (extends Supabase auth) |
+| `hospitals` | Hospital list |
+| `modules` | Training modules (pass_threshold, certificate_validity_days) |
+| `content` | Content items per module (type: video/pdf/html, display_order) |
+| `tests` | One pre + one post test per module |
+| `questions` | MCQ questions — options stored as JSONB `[{text, is_correct}]` |
+| `test_attempts` | Every submission: score_percent, passed, attempted_at |
+| `answers` | Per-question answer per attempt |
+| `user_progress` | Per user-module: status, last_accessed, last_content_access_at |
+| `content_progress` | Per user-content: completed, watch_pct, completed_at |
+| `certificates` | Issued certs: issued_at, expires_at, revoked_at |
+| `user_notes` | Per user-content note text (schema ready, UI pending) |
+| `admin_actions` | Audit log for admin operations |
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | UUID PK | Matches Supabase Auth `auth.users.id` |
-| `email` | TEXT | |
-| `full_name` | TEXT | ad + soyad + ata_adi combined |
-| `ad` | TEXT | First name |
-| `soyad` | TEXT | Surname |
-| `ata_adi` | TEXT | Father's name |
-| `hospital_name` | TEXT | From dropdown or manual entry |
-| `ixtisas` | TEXT | Specialty |
-| `ohdelik` | TEXT | `İPİN həkimi` or `İPİN tibb bacısı` |
-| `vezife` | TEXT | Position/job title |
-| `role` | TEXT | `user` \| `admin` — default `user`, set manually in Supabase |
-| `status` | TEXT | `pending` \| `approved` \| `rejected` |
-| `created_at` | TIMESTAMPTZ | |
+### `user_progress` key columns
+| Column | Notes |
+|--------|-------|
+| `status` | `not_started` → `in_progress` → `completed` |
+| `last_accessed` | Updated on any module visit |
+| `last_content_access_at` | Updated after 10s+ engagement — used for post-test gate C1 |
 
-### `modules` table
+---
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | BIGINT PK | |
-| `title` | TEXT | Module name |
-| `description` | TEXT | |
-| `created_at` | TIMESTAMPTZ | |
+## Module & Certification Logic
 
-### `user_progress` table
+### Pre-test gate
+1. Block if valid certificate exists (cycle still active)
+2. Block if any pre-test attempt exists in current cycle
+3. On any submission: unlock content (pass not required)
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `user_id` | UUID FK | References `users.id` |
-| `module_id` | BIGINT FK | References `modules.id` |
-| `status` | TEXT | `not_started` \| `in_progress` \| `completed` |
-| `last_accessed` | TIMESTAMPTZ | |
-| PRIMARY KEY | `(user_id, module_id)` | One row per user-module pair |
+### Post-test gates (all must pass)
+1. Pre-test attempted in current cycle
+2. All content items 100% completed
+3a. Last attempt **failed** → `last_content_access_at > last_post_attempt_at`
+3b. Last attempt **passed** → 3-day cooldown elapsed
 
-> `user_progress` is not yet created in Supabase — needed before implementing module completion tracking.
+### `last_content_access_at` update rules
+- Videos: after 10+ seconds of actual playback
+- PDF / HTML: when "Oxudum ✓" is clicked
+- NOT on page load
 
-### RLS Policies (users table)
-
-| Policy | Who | Action |
-|--------|-----|--------|
-| Users can insert own row | Authenticated | INSERT where `id = auth.uid()` |
-| Users can read own row | Authenticated | SELECT where `id = auth.uid()` |
-| Admin can read all rows | Admin email | SELECT all |
-| Admin can update all rows | Admin email | UPDATE all |
+### Certificate lifecycle
+```
+Pre-test → Content (100%) → Post-test pass → Certificate (1 year)
+                                                     │
+                                            Certificate expires
+                                                     │
+                                             New cycle begins
+                                                     │
+                                          Pre-test required again
+```
 
 ---
 
 ## Auth & User Flow
 
 ```
-1. User signs up → row inserted in users table with status='pending'
-2. User sees PendingApproval page
-3. Admin logs in → sees user in AdminPanel under "Gözləyənlər" tab
-4. Admin clicks "Təsdiqlə" → status updated to 'approved'
-   → Supabase trigger fires → email sent via Resend API
-5. User can now log in → lands on Dashboard
-6. If admin clicks "Rədd et" → user sees rejection screen
+1. Signup → users row inserted (status='pending')
+2. PendingApproval page shown
+3. Admin approves → status='approved' → email sent via Resend
+4. User logs in → Dashboard
+5. Opens module → Pre-test → Content → Post-test → Certificate
 ```
 
-### Admin Access
-Admin is identified by email matching `VITE_ADMIN_EMAIL` env var.
-- Admin sees Dashboard + "Admin Panel" button in sidebar
-- Admin can navigate to `/admin` for user management
+### Admin access
+Identified by `VITE_ADMIN_EMAIL`. Can access `/admin` and sees Admin Panel link in sidebar.
+
+### Email notifications
+Supabase DB trigger + `pg_net` → Resend API. Currently limited to verified sender addresses until a custom domain is set up on Resend.
 
 ---
 
-## Email Notifications
+## Edge Functions
 
-Email is sent automatically when a user's status changes to `approved`.
+### `submit-test`
+**Deploy:** `npx supabase functions deploy submit-test --no-verify-jwt`
+**Auth:** Bearer token validated via `db.auth.getUser(token)` inside the function
 
-**Implementation:** Supabase database trigger using `pg_net` extension calls the Resend API.
+**Input:**
+```json
+{
+  "test_id": 1,
+  "answers": [{ "question_id": 1, "user_choice": "Option text" }]
+}
+```
 
-**Current limitation:** Without a verified custom domain on Resend, emails can only be sent to the admin's own email address. Full user notifications will work once a domain is purchased and verified at resend.com.
+**Output:**
+```json
+{
+  "attempt_id": 42,
+  "score_percent": 80.00,
+  "passed": true,
+  "correct_count": 8,
+  "total_questions": 10,
+  "attempt_number": 1,
+  "feedback": [{ "question_id": 1, "is_correct": true, "correct_answer": "..." }],
+  "certificate_issued": true,
+  "certificate_expires_at": "2027-03-30T..."
+}
+```
 
-**To set up after domain purchase:**
-1. Add domain in Resend dashboard → get DNS records
-2. Add DNS records at domain registrar
-3. Update the trigger's `"from"` field from `onboarding@resend.dev` to `noreply@yourdomain.com`
-4. Update Resend API key if needed
+`correct_answer` only present in feedback when `passed = true`.
 
 ---
 
 ## Deployment
 
-**Live URL:** Deployed on Vercel (auto-deploys from `main` branch on GitHub)
+**Live URL:** `https://ipctrainingportal.vercel.app`
 **Repo:** https://github.com/sugraazimova-cmyk/ipc-training
+Auto-deploys from `main` on push.
 
-### Deploy steps
-1. Push to `main` → Vercel picks it up automatically
-2. Or: `vercel deploy --prod` from CLI
-
-### Required Vercel environment variables
-Set these in Vercel → Project Settings → Environment Variables:
+### Vercel env vars required
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 - `VITE_ADMIN_EMAIL`
+
+### Database setup
+Run in Supabase SQL Editor in order:
+1. `supabase/migrations/001_initial_schema.sql`
+2. `supabase/migrations/002_schema_updates.sql`
 
 ---
 
 ## Roadmap
 
-### Next up
-- [ ] Domain purchase + Resend domain verification (unblocks email to all users)
-- [ ] Add training module content to `modules` table
-- [ ] Sidebar pages: Modullar, Cədvəl, Sertifikatlar, Parametrlər
+### Next Up (Known Issues + UX)
+- [ ] Pre-test result summary page (show score + feedback before going to materials)
+- [ ] Materials → Post-test: intentional CTA button instead of auto-redirect
+- [ ] Test review: always show correct answer (even on correct responses)
+- [ ] Storage video seek-forward restriction (HTML5 — YouTube already works)
 
-### Phase 2 — Core Learning Features
-- [ ] Module content viewer (video, PDF, text)
-- [ ] Pre-test + post-test (MCQ)
-- [ ] Scoring engine (pass threshold 80%)
-- [ ] Auto-issued PDF certificates
-- [ ] User progress tracking
+### UI Redesign (Planned)
+- [ ] Sidebar-based ModulePage layout (Coursera-style two-column)
+- [ ] Dedicated ContentItemPage (`/module/:id/content/:contentId`)
+- [ ] Notes UI (user_notes table ready, UI pending)
+- [ ] Prev/next content item navigation
 
 ### Phase 3 — Admin Content Management
-- [ ] Create/edit/publish modules from admin panel
-- [ ] Upload content (video, PDF)
-- [ ] Create MCQ questions
+- [ ] Create/edit/publish modules from admin UI
+- [ ] Upload video/PDF content
+- [ ] Build MCQ question sets in admin UI
 - [ ] Hospital-level analytics
 
 ### Phase 4 — Polish
+- [ ] PDF certificate generation and download
 - [ ] Mobile responsiveness
-- [ ] Accessibility (WCAG 2.1)
-- [ ] Rate limiting
+- [ ] Custom domain + Resend domain verification (enables email to all users)
 - [ ] Audit log viewer in admin panel
 
 ---
 
 **Last Updated:** March 2026
-
